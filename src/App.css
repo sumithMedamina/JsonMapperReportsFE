@@ -1,0 +1,32 @@
+.container {
+  /* display: flex;
+  justify-content: space-between; */
+  /* padding: 20px; */
+}
+
+.box {
+  /* width: 45%;
+  padding: 20px; */
+  border: 1px solid #000;
+  position: relative;
+}
+
+.box ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.box li {
+  /* padding: 8px;
+  margin: 4px 0; */
+  border: 1px solid #000;
+  cursor: grab;
+}
+
+#canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+}
+
