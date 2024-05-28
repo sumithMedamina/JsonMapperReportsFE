@@ -1,11 +1,13 @@
 import React, { useState, useContext,  useRef, useLayoutEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import JsonContext from './JsonContext';
+import { useNavigate } from 'react-router-dom';
 
 const JsonMapper = () => {
-  const { sourceJson, targetJson } = useContext(JsonContext);
+  const { url,sourceJson, targetJson } = useContext(JsonContext);
   const [mappings, setMappings] = useState([]);
   const [updatedSourceJson, setUpdatedSourceJson] = useState('');
+  const navigate = useNavigate();
 
   const sourceRefs = useRef({});
   const targetRefs = useRef({});
@@ -44,7 +46,7 @@ const JsonMapper = () => {
   const handleDrop = (event, targetKey) => {
     event.preventDefault();
     const sourceKey = event.dataTransfer.getData('sourceKey');
-
+  
     const existingMapping = mappings.find((m) => m.source === sourceKey);
     if (existingMapping) {
       setMappings(mappings.map((m) => (m.source === sourceKey ? { source: sourceKey, target: targetKey } : m)));
@@ -52,7 +54,6 @@ const JsonMapper = () => {
       setMappings([...mappings, { source: sourceKey, target: targetKey }]);
     }
   };
-
   const handleDragOver = (event) => {
     event.preventDefault();
   };
@@ -130,22 +131,24 @@ const JsonMapper = () => {
   const saveUpdatedJson = () => {
     const jsonData = JSON.parse(updatedSourceJson);
 
-    fetch('http://localhost:5000/api/items', {
+    fetch('http://localhost:5000/api/save', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(jsonData),
+      body: JSON.stringify({ path: url, data: jsonData })
     })
       .then((response) => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
         alert('Data saved successfully');
+
         return response.json();
       })
       .then((data) => {
         console.log('Data saved successfully:', data);
+        navigate('/rebrand')
       })
       .catch((error) => {
         console.error('Error saving data:', error);

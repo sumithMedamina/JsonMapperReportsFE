@@ -1,17 +1,22 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import JsonContext from "./JsonContext";
 
 const RestEndpoint = () => {
-  const { setSourceJson } = useContext(JsonContext);
-  const [url, setUrl] = useState("https://fakestoreapi.com/products");
+  const { setSourceJson, url, setUrl } = useContext(JsonContext);
+  const [urlInput, setUrlInput] = useState(url); // Initialize with the URL from context
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setUrlInput(url); // Update the input value when URL changes
+  }, [url]);
 
   const handleSaveData = async () => {
     try {
-      const response = await fetch(url);
+      const response = await fetch(urlInput);
       const data = await response.json();
       setSourceJson(data);
+      setUrl(urlInput); // Save the URL in the context
       alert("Data saved to source");
       navigate("/schema-builder");
     } catch (error) {
@@ -25,8 +30,8 @@ const RestEndpoint = () => {
       <input
         type="text"
         className="form-control"
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
+        value={urlInput}
+        onChange={(e) => setUrlInput(e.target.value)}
       />
       <button className="btn btn-primary mt-3" onClick={handleSaveData}>
         Save Data
