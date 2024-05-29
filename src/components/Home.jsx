@@ -35,7 +35,7 @@ function Home() {
     <div className="container-fluid " style={{width: "97vw"}}>
       <div className="row">
         <div className="col-lg-2 col-md-4 bg-light border">
-          <div className="d-flex flex-column p-3 ">
+          <div className="d-flex flex-column  justify-content-center  p-3 " style={{height: "80vh"}}>
             <button
               className={`btn btn-primary mb-4  ${activeComponent === "RestEndpoint" ? "active" : ""}`}
               onClick={() => handleNavigation("RestEndpoint")}

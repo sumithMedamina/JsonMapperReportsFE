@@ -12,31 +12,31 @@ const App = () => {
   return (
     <BrowserRouter >
     
-        <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+        <nav className="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
           <div className="collapse navbar-collapse" id="navbarNav">
-            <ul className="navbar-nav mx-auto">
+            <ul className="navbar-nav mx-auto" style={{fontWeight:"700"}}>
               <li className="nav-item">
-                <Link className="nav-link" to="/rest-endpoint">
+                <Link className="nav-link text-white" to="/rest-endpoint" >
                   Home
                 </Link>
               </li>
-              <li className="nav-item">
-                <Link className="nav-link" to="/rest-endpoint">
+              <li className="nav-item ">
+                <Link className="nav-link text-white" to="/rest-endpoint">
                   Rest EndPoint
                 </Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link" to="/schema-builder">
+                <Link className="nav-link text-white" to="/schema-builder">
                   Schema Builder
                 </Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link" to="/json-mapper">
+                <Link className="nav-link text-white" to="/json-mapper">
                   JSON Mapper
                 </Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link" to="/rebrand">
+                <Link className="nav-link text-white" to="/rebrand">
                   Re-Brand
                 </Link>
               </li>
@@ -44,7 +44,7 @@ const App = () => {
           </div>
         </nav>
 
-        <div className="container mt-3 m-0">
+        <div className="container mt-5 m-0 ">
           <JsonProvider>
             <Routes>
               <Route path="/*" element={<Home />} />
