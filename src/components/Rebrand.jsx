@@ -44,9 +44,9 @@ const Rebrand = () => {
       const data = await response.json();
       console.log('Rebranded URL data saved:', data);
 
-      // Update the input box with the rebranded URL path
-      setRebrandedUrl(data.path);
-      setRebrandedData(data.data); // Display the data immediately if needed
+      // Update the input box with the full rebranded URL
+      setRebrandedUrl(`http://localhost:5000${data.path}`);
+      setRebrandedData(null); // Clear any previously fetched data
     } catch (error) {
       console.error('Error rebranding URL:', error);
     }
@@ -54,7 +54,7 @@ const Rebrand = () => {
 
   const handleFetch = async () => {
     try {
-      const response = await fetch(`http://localhost:5000${rebrandedUrl}`);
+      const response = await fetch(rebrandedUrl);
 
       if (!response.ok) {
         throw new Error('Failed to fetch data');
@@ -81,6 +81,7 @@ const Rebrand = () => {
               value={rebrandedUrl} 
               onChange={(e) => setRebrandedUrl(e.target.value)} 
               placeholder="Rebranded URL will appear here" 
+              readOnly // Make the input read-only as it's supposed to show the rebranded URL
             />
             <button onClick={handleFetch} className="btn btn-secondary">Fetch</button>
           </div>

@@ -14,7 +14,7 @@ const App = () => {
     
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
           <div className="collapse navbar-collapse" id="navbarNav">
-            <ul className="navbar-nav mx-auto" style={{fontWeight:"700"}}>
+            <ul className="navbar-nav mx-auto" style= {{fontWeight:"600"}}>
               <li className="nav-item">
                 <Link className="nav-link text-white" to="/rest-endpoint" >
                   Home
@@ -44,7 +44,7 @@ const App = () => {
           </div>
         </nav>
 
-        <div className="container mt-5 m-0 ">
+        <div className="container " style={{marginTop: "70px", marginLeft: "0px"}}>
           <JsonProvider>
             <Routes>
               <Route path="/*" element={<Home />} />
