@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useRef } from 'react';
+import React, { useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -50,14 +50,14 @@ const JsonMapper = () => {
   const targetRefs = useRef({});
   const containerRef = useRef(null);
 
-  const applyMapping = (obj, mappings, parentKey = '') => {
+  const applyMapping = useCallback((obj, mappings, parentKey = '') => {
     const newObj = {};
-
+  
     Object.keys(obj).forEach(key => {
       const fullKey = parentKey ? `${parentKey}.${key}` : key;
       const value = obj[key];
       const mapping = mappings.find(m => m.source === fullKey);
-
+  
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
         newObj[mapping ? mapping.target.split('.').pop() : key] = applyMapping(value, mappings, fullKey);
       } else {
@@ -68,16 +68,18 @@ const JsonMapper = () => {
         }
       }
     });
-
+  
     return newObj;
-  };
+  }, []);
+  
 
   useEffect(() => {
     if (sourceJson && sourceJson.length > 0) {
       const updatedJson = sourceJson.map(obj => applyMapping(obj, mappings));
       setUpdatedSourceJson(JSON.stringify(updatedJson, null, 2));
     }
-  }, [mappings, sourceJson]);
+  }, [mappings, sourceJson, applyMapping]);  // Add applyMapping to the dependency array
+  
 
   const handleDrop = (sourceItem, targetKey) => {
     const mappingExists = mappings.some(mapping => mapping.source === sourceItem.name && mapping.target === targetKey);
@@ -90,9 +92,9 @@ const JsonMapper = () => {
     });
   };
 
-  const handleDragOver = (event) => {
-    event.preventDefault();
-  };
+  // const handleDragOver = (event) => {
+  //   event.preventDefault();
+  // };
 
   const handleCancelMapping = sourceKey => {
     setMappings(mappings.filter(mapping => mapping.source !== sourceKey));
@@ -134,34 +136,39 @@ const JsonMapper = () => {
       </ul>
     );
   };
-
   const renderMappings = () => {
     const colors = ['#FF0000', '#00FF00', '#0000FF', '#00FFFF', '#FF00FF']; // Define colors for arrows
     const renderedMappings = [];
-
+  
     mappings.forEach((mapping, index) => {
       const sourceElement = sourceRefs.current[mapping.source];
       const targetElement = targetRefs.current[mapping.target];
-
+  
       if (sourceElement && targetElement) {
         const sourceRect = sourceElement.getBoundingClientRect();
         const targetRect = targetElement.getBoundingClientRect();
         const containerRect = containerRef.current.getBoundingClientRect();
-
+  
         const sourceX = sourceRect.right - containerRect.left;
         const sourceY = sourceRect.top + sourceRect.height / 2 - containerRect.top;
         const targetX = targetRect.left - containerRect.left;
         const targetY = targetRect.top + targetRect.height / 2 - containerRect.top;
-
+  
         const color = colors[index % colors.length];
-
+  
+        // Calculate control points for the curve
+        const controlX1 = sourceX + 50;
+        const controlY1 = sourceY;
+        const controlX2 = targetX - 50;
+        const controlY2 = targetY;
+  
+        const path = `M${sourceX},${sourceY} C${controlX1},${controlY1} ${controlX2},${controlY2} ${targetX},${targetY}`;
+  
         renderedMappings.push(
-          <line
+          <path
             key={`${mapping.source}-${mapping.target}`}
-            x1={sourceX}
-            y1={sourceY}
-            x2={targetX}
-            y2={targetY}
+            d={path}
+            fill="none"
             stroke={color}
             strokeWidth="2"
             markerEnd="url(#arrow)"
@@ -169,9 +176,11 @@ const JsonMapper = () => {
         );
       }
     });
-
+  
     return renderedMappings;
   };
+  
+  
 
   const saveUpdatedJson = () => {
     const jsonData = updatedSourceJson ? JSON.parse(updatedSourceJson) : {};
