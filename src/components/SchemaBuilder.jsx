@@ -19,6 +19,22 @@ const SchemaBuilder = () => {
     navigate('/json-mapper');
   };
 
+  // Function to extract the 0 index object from an array of objects, if it exists
+  const extractZeroIndexObject = (obj) => {
+    const newObj = { ...obj };
+    for (const key in newObj) {
+      if (Array.isArray(newObj[key]) && newObj[key].length > 0) {
+        newObj[key] = newObj[key][0];
+      }
+    }
+    return newObj;
+  };
+    
+  
+
+  // Extracting the 0 index object from the sourceJson
+  const valueToRender = sourceJson.length > 0 ? extractZeroIndexObject(sourceJson[0]) : {};
+
   return (
     <div className="container mt-3">
       <div className="row">
@@ -26,7 +42,7 @@ const SchemaBuilder = () => {
           <h3 className="text-warning">Schema Builder:</h3>
           {sourceJson.length > 0 && (
             <Editor
-              value={sourceJson[0]}
+              value={valueToRender}
               onChange={handleEditorChange}
               modes={["tree", "code"]}
               mode="tree"

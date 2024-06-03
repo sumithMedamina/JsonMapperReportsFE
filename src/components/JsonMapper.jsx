@@ -52,7 +52,8 @@ const JsonMapper = () => {
 
   const applyMapping = (obj, mappings, parentKey = '') => {
     if (Array.isArray(obj)) {
-      return obj.map((item, index) => applyMapping(item, mappings, `${parentKey}[${index}]`));
+      // If the value is an array, map over each item and apply the mapping recursively
+      return obj.map((item, index) => applyMapping(item, mappings, `${parentKey}`));
     }
 
     const newObj = {};
@@ -62,18 +63,17 @@ const JsonMapper = () => {
       const value = obj[key];
       const mapping = mappings.find(m => m.source === fullKey);
 
-      if (Array.isArray(value)) {
-        newObj[mapping ? mapping.target.split('.').pop() : key] = value.map((item, index) =>
-          applyMapping(item, mappings, `${fullKey}[${index}]`)
+      if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') {
+        // If the value is an array of objects, apply the same mapping to all objects in the array
+        newObj[mapping ? mapping.target.split('.').pop() : key] = value.map(item =>
+          applyMapping(item, mappings, `${fullKey}`)
         );
       } else if (typeof value === 'object' && value !== null) {
+        // If the value is an object, apply the mapping recursively
         newObj[mapping ? mapping.target.split('.').pop() : key] = applyMapping(value, mappings, fullKey);
       } else {
-        if (mapping && mapping.source === fullKey) {
-          newObj[mapping.target.split('.').pop()] = value;
-        } else {
-          newObj[key] = value;
-        }
+        // Apply the mapping if it exists, otherwise copy the value as is
+        newObj[mapping ? mapping.target.split('.').pop() : key] = value;
       }
     });
 
@@ -98,9 +98,9 @@ const JsonMapper = () => {
     });
   };
 
-  const handleDragOver = (event) => {
-    event.preventDefault();
-  };
+  // const handleDragOver = (event) => {
+  //   event.preventDefault();
+  // };
 
   const handleCancelMapping = sourceKey => {
     setMappings(mappings.filter(mapping => mapping.source !== sourceKey));
@@ -135,12 +135,20 @@ const JsonMapper = () => {
                 </DroppableKey>
               )}
               {Array.isArray(value) ? (
-                value.map((item, index) => (
-                  <div key={`${fullKey}[${index}]`} className="ms-3">
-                    <span className="fw-bold">[{index}]</span>
-                    {renderObject(item, isSource, `${fullKey}[${index}]`)}
+                // Only show the 0th index object in nested arrays for source JSON
+                isSource ? (
+                  <div key={`${fullKey}[0]`} className="ms-3">
+                    <span className="fw-bold">[0]</span>
+                    {renderObject(value[0], isSource, `${fullKey}`)}
                   </div>
-                ))
+                ) : (
+                  value.map((item, index) => (
+                    <div key={`${fullKey}[${index}]`} className="ms-3">
+                      <span className="fw-bold">[{index}]</span>
+                      {renderObject(item, isSource, `${fullKey}[${index}]`)}
+                    </div>
+                  ))
+                )
               ) : (
                 typeof value === 'object' && value !== null && (
                   renderObject(value, isSource, fullKey)
@@ -173,13 +181,19 @@ const JsonMapper = () => {
 
         const color = colors[index % colors.length];
 
+        // Calculate control points for the curve
+        const controlX1 = sourceX + 50;
+        const controlY1 = sourceY;
+        const controlX2 = targetX - 50;
+        const controlY2 = targetY;
+
+        const path = `M${sourceX},${sourceY} C${controlX1},${controlY1} ${controlX2},${controlY2} ${targetX},${targetY}`;
+
         renderedMappings.push(
-          <line
+          <path
             key={`${mapping.source}-${mapping.target}`}
-            x1={sourceX}
-            y1={sourceY}
-            x2={targetX}
-            y2={targetY}
+            d={path}
+            fill="none"
             stroke={color}
             strokeWidth="2"
             markerEnd="url(#arrow)"
@@ -194,7 +208,7 @@ const JsonMapper = () => {
   const saveUpdatedJson = () => {
     const jsonData = updatedSourceJson ? JSON.parse(updatedSourceJson) : {};
 
-    fetch('http://localhost:5000/api/save', {
+    fetch('http://localhost:5000/api/items', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
