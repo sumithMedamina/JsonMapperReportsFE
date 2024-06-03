@@ -34,7 +34,7 @@ const Rebrand = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url: path }),
+        body: JSON.stringify({ url: path.toLowerCase() }),
       });
 
       if (!response.ok) {

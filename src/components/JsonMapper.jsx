@@ -204,11 +204,16 @@ const JsonMapper = () => {
 
     return renderedMappings;
   };
+  
+  
+  
+  
+  
 
   const saveUpdatedJson = () => {
     const jsonData = updatedSourceJson ? JSON.parse(updatedSourceJson) : {};
 
-    fetch('http://localhost:5000/api/items', {
+    fetch('http://localhost:5000/api/save', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
