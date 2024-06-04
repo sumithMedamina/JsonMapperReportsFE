@@ -52,27 +52,22 @@ const JsonMapper = () => {
 
   const applyMapping = (obj, mappings, parentKey = '') => {
     if (Array.isArray(obj)) {
-      // If the value is an array, map over each item and apply the mapping recursively
       return obj.map((item, index) => applyMapping(item, mappings, `${parentKey}`));
     }
 
     const newObj = {};
-
     Object.keys(obj).forEach(key => {
       const fullKey = parentKey ? `${parentKey}.${key}` : key;
       const value = obj[key];
       const mapping = mappings.find(m => m.source === fullKey);
 
       if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') {
-        // If the value is an array of objects, apply the same mapping to all objects in the array
         newObj[mapping ? mapping.target.split('.').pop() : key] = value.map(item =>
           applyMapping(item, mappings, `${fullKey}`)
         );
       } else if (typeof value === 'object' && value !== null) {
-        // If the value is an object, apply the mapping recursively
         newObj[mapping ? mapping.target.split('.').pop() : key] = applyMapping(value, mappings, fullKey);
       } else {
-        // Apply the mapping if it exists, otherwise copy the value as is
         newObj[mapping ? mapping.target.split('.').pop() : key] = value;
       }
     });
@@ -81,8 +76,11 @@ const JsonMapper = () => {
   };
 
   useEffect(() => {
-    if (sourceJson && sourceJson.length > 0) {
-      const updatedJson = sourceJson.map(obj => applyMapping(obj, mappings));
+    console.log("sourceJson:", sourceJson);
+    if (sourceJson) {
+      const updatedJson = Array.isArray(sourceJson) ? 
+        sourceJson.map(obj => applyMapping(obj, mappings)) :
+        [applyMapping(sourceJson, mappings)];
       setUpdatedSourceJson(JSON.stringify(updatedJson, null, 2));
     }
   }, [mappings, sourceJson]);
@@ -93,14 +91,8 @@ const JsonMapper = () => {
       return;
     }
 
-    setMappings(prevMappings => {
-      return [...prevMappings, { source: sourceItem.name, target: targetKey }];
-    });
+    setMappings(prevMappings => [...prevMappings, { source: sourceItem.name, target: targetKey }]);
   };
-
-  // const handleDragOver = (event) => {
-  //   event.preventDefault();
-  // };
 
   const handleCancelMapping = sourceKey => {
     setMappings(mappings.filter(mapping => mapping.source !== sourceKey));
@@ -108,22 +100,25 @@ const JsonMapper = () => {
 
   const renderObject = (obj, isSource = false, parentKey = '') => {
     if (!obj) return null;
-
+  
+    // If obj is an array, get the first item
+    const objToRender = Array.isArray(obj) ? obj[0] : obj;
+  
     return (
       <ul className="list-group">
-        {Object.entries(obj).map(([key, value]) => {
-          const mapping = mappings.find((m) => m.source === (parentKey ? `${parentKey}.${key}` : key));
+        {Object.entries(objToRender).map(([key, value]) => {
           const fullKey = parentKey ? `${parentKey}.${key}` : key;
-
+          const mapping = mappings.find(m => m.source === fullKey);
+  
           return (
-            <li key={fullKey} className="list-group-item" ref={(el) => {
+            <li key={fullKey} className="list-group-item" ref={el => {
               if (isSource) sourceRefs.current[fullKey] = el;
               else targetRefs.current[fullKey] = el;
             }}>
               {isSource ? (
                 <DraggableKey id={fullKey} name={fullKey}>
                   <span className="fw-bold">{key}:</span> {JSON.stringify(value)}
-                  {mapping && isSource && (
+                  {mapping && (
                     <button className="btn btn-sm btn-danger ms-2" onClick={() => handleCancelMapping(mapping.source)}>
                       &times;
                     </button>
@@ -134,25 +129,14 @@ const JsonMapper = () => {
                   <span className="fw-bold">{key}:</span> {JSON.stringify(value)}
                 </DroppableKey>
               )}
-              {Array.isArray(value) ? (
+              {Array.isArray(value) && isSource ? (
                 // Only show the 0th index object in nested arrays for source JSON
-                isSource ? (
-                  <div key={`${fullKey}[0]`} className="ms-3">
-                    <span className="fw-bold">[0]</span>
-                    {renderObject(value[0], isSource, `${fullKey}`)}
-                  </div>
-                ) : (
-                  value.map((item, index) => (
-                    <div key={`${fullKey}[${index}]`} className="ms-3">
-                      <span className="fw-bold">[{index}]</span>
-                      {renderObject(item, isSource, `${fullKey}[${index}]`)}
-                    </div>
-                  ))
-                )
+                <div key={`${fullKey}[0]`} className="ms-3">
+                  <span className="fw-bold">[0]</span>
+                  {renderObject(value[0], isSource, `${fullKey}`)}
+                </div>
               ) : (
-                typeof value === 'object' && value !== null && (
-                  renderObject(value, isSource, fullKey)
-                )
+                typeof value === 'object' && value !== null && renderObject(value, isSource, fullKey)
               )}
             </li>
           );
@@ -160,9 +144,10 @@ const JsonMapper = () => {
       </ul>
     );
   };
+  
 
   const renderMappings = () => {
-    const colors = ['#FF0000', '#00FF00', '#0000FF', '#00FFFF', '#FF00FF']; // Define colors for arrows
+    const colors = ['#FF0000', '#00FF00', '#0000FF', '#00FFFF', '#FF00FF'];
     const renderedMappings = [];
 
     mappings.forEach((mapping, index) => {
@@ -181,7 +166,6 @@ const JsonMapper = () => {
 
         const color = colors[index % colors.length];
 
-        // Calculate control points for the curve
         const controlX1 = sourceX + 50;
         const controlY1 = sourceY;
         const controlX2 = targetX - 50;
@@ -204,11 +188,6 @@ const JsonMapper = () => {
 
     return renderedMappings;
   };
-  
-  
-  
-  
-  
 
   const saveUpdatedJson = () => {
     const jsonData = updatedSourceJson ? JSON.parse(updatedSourceJson) : {};
@@ -218,7 +197,7 @@ const JsonMapper = () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ path: url, data: jsonData })
+      body: JSON.stringify({ path: url, data: jsonData }),
     })
       .then((response) => {
         if (!response.ok) {
@@ -242,10 +221,10 @@ const JsonMapper = () => {
         <div className="row d-flex justify-content-between">
           <div className="col-md-5">
             <div className="card">
-              <div className="card-header bg-primary text-white">
+            <div className="card-header bg-primary text-white">
                 <h3>Source JSON</h3>
               </div>
-              <div className="card-body">{renderObject(sourceJson && sourceJson[0], true)}</div>
+              <div className="card-body">{renderObject(sourceJson, true)}</div>
             </div>
           </div>
           <div className="col-md-5">
@@ -290,3 +269,4 @@ const JsonMapper = () => {
 };
 
 export default JsonMapper;
+
