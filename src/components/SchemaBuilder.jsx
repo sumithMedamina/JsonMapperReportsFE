@@ -67,7 +67,7 @@ const SchemaBuilder = () => {
     <div className="container mt-3">
       <div className="row">
         <div className="col">
-          <h3 className="text-warning">Schema Builder:</h3>
+          <h4 className="text-danger">Create Your Own Schema:</h4>
           {Object.keys(editorValue).length > 0 ? (
             <Editor
               value={editorValue}

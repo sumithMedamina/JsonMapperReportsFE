@@ -1,45 +1,10 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
-import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import JsonContext from './JsonContext';
+import JsonContext from '../JsonContext';
 import { useNavigate } from 'react-router-dom';
-
-const ItemTypes = {
-  KEY: 'key',
-};
-
-const DraggableKey = ({ id, name, children }) => {
-  const [{ isDragging }, drag] = useDrag(() => ({
-    type: ItemTypes.KEY,
-    item: { id, name },
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging(),
-    }),
-  }));
-
-  return (
-    <div ref={drag} style={{ opacity: isDragging ? 0.5 : 1 }} className="list-group-item">
-      {children}
-    </div>
-  );
-};
-
-const DroppableKey = ({ id, onDrop, children }) => {
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: ItemTypes.KEY,
-    drop: (item) => onDrop(item, id),
-    collect: (monitor) => ({
-      isOver: !!monitor.isOver(),
-    }),
-  }));
-
-  return (
-    <div ref={drop} style={{ backgroundColor: isOver ? 'lightyellow' : 'inherit' }} className="list-group-item">
-      {children}
-    </div>
-  );
-};
+import JsonObject from './JsonObject';
 
 const JsonMapper = () => {
   const { sourceJson, targetJson, url } = useContext(JsonContext);
@@ -61,14 +26,16 @@ const JsonMapper = () => {
       const value = obj[key];
       const mapping = mappings.find(m => m.source === fullKey);
 
-      if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') {
-        newObj[mapping ? mapping.target.split('.').pop() : key] = value.map(item =>
-          applyMapping(item, mappings, `${fullKey}`)
-        );
-      } else if (typeof value === 'object' && value !== null) {
-        newObj[mapping ? mapping.target.split('.').pop() : key] = applyMapping(value, mappings, fullKey);
-      } else {
-        newObj[mapping ? mapping.target.split('.').pop() : key] = value;
+      if (mapping) {
+        if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') {
+          newObj[mapping.target.split('.').pop()] = value.map(item =>
+            applyMapping(item, mappings, `${fullKey}`)
+          );
+        } else if (typeof value === 'object' && value !== null) {
+          newObj[mapping.target.split('.').pop()] = applyMapping(value, mappings, fullKey);
+        } else {
+          newObj[mapping.target.split('.').pop()] = value;
+        }
       }
     });
 
@@ -99,52 +66,20 @@ const JsonMapper = () => {
   };
 
   const renderObject = (obj, isSource = false, parentKey = '') => {
-    if (!obj) return null;
-  
-    // If obj is an array, get the first item
-    const objToRender = Array.isArray(obj) ? obj[0] : obj;
-  
     return (
-      <ul className="list-group">
-        {Object.entries(objToRender).map(([key, value]) => {
-          const fullKey = parentKey ? `${parentKey}.${key}` : key;
-          const mapping = mappings.find(m => m.source === fullKey);
-  
-          return (
-            <li key={fullKey} className="list-group-item" ref={el => {
-              if (isSource) sourceRefs.current[fullKey] = el;
-              else targetRefs.current[fullKey] = el;
-            }}>
-              {isSource ? (
-                <DraggableKey id={fullKey} name={fullKey}>
-                  <span className="fw-bold">{key}:</span> {JSON.stringify(value)}
-                  {mapping && (
-                    <button className="btn btn-sm btn-danger ms-2" onClick={() => handleCancelMapping(mapping.source)}>
-                      &times;
-                    </button>
-                  )}
-                </DraggableKey>
-              ) : (
-                <DroppableKey id={fullKey} onDrop={handleDrop}>
-                  <span className="fw-bold">{key}:</span> {JSON.stringify(value)}
-                </DroppableKey>
-              )}
-              {Array.isArray(value) && isSource ? (
-                // Only show the 0th index object in nested arrays for source JSON
-                <div key={`${fullKey}[0]`} className="ms-3">
-                  <span className="fw-bold">[0]</span>
-                  {renderObject(value[0], isSource, `${fullKey}`)}
-                </div>
-              ) : (
-                typeof value === 'object' && value !== null && renderObject(value, isSource, fullKey)
-              )}
-            </li>
-          );
-        })}
-      </ul>
+      <JsonObject
+        obj={obj}
+        isSource={isSource}
+        parentKey={parentKey}
+        mappings={mappings}
+        handleCancelMapping={handleCancelMapping}
+        handleDrop={handleDrop}
+        renderObject={renderObject}
+        sourceRefs={sourceRefs}
+        targetRefs={targetRefs}
+      />
     );
   };
-  
 
   const renderMappings = () => {
     const colors = ['#FF0000', '#00FF00', '#0000FF', '#00FFFF', '#FF00FF'];
@@ -221,7 +156,7 @@ const JsonMapper = () => {
         <div className="row d-flex justify-content-between">
           <div className="col-md-5">
             <div className="card">
-            <div className="card-header bg-primary text-white">
+              <div className="card-header bg-primary text-white">
                 <h3>Source JSON</h3>
               </div>
               <div className="card-body">{renderObject(sourceJson, true)}</div>
@@ -269,4 +204,3 @@ const JsonMapper = () => {
 };
 
 export default JsonMapper;
-

@@ -87,7 +87,7 @@ const Rebrand = () => {
           </div>
           {rebrandedData && (
             <div>
-              <h5>Rebranded Data</h5>
+              <h5 className='text-success'>Customized Data</h5>
               <pre>{JSON.stringify(rebrandedData, null, 2)}</pre>
             </div>
           )}

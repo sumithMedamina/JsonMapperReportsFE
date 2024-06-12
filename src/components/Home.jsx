@@ -3,7 +3,7 @@ import { Routes, Route, useNavigate } from "react-router-dom";
 import { RiHome2Fill, RiFileEditFill, RiSettings2Fill, RiRefreshFill } from 'react-icons/ri';
 import RestEndpoint from "./RestEndPoint";
 import SchemaBuilder from "./SchemaBuilder";
-import JsonMapper from "./JsonMapper";
+import JsonMapper from "./JsonMapper/JsonMapper";
 import Rebrand from "./Rebrand";
 
 function Home() {
