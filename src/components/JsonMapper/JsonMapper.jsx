@@ -15,24 +15,25 @@ const JsonMapper = () => {
   const targetRefs = useRef({});
   const containerRef = useRef(null);
 
-  const applyMapping = (obj, mappings, parentKey = '') => {
-    if (Array.isArray(obj)) {
-      return obj.map((item, index) => applyMapping(item, mappings, `${parentKey}`));
+  const applyMapping = (sourceObj, targetObj, mappings, parentKey = '') => {
+    const newObj = { ...targetObj }; // Initialize with targetObj
+
+    if (Array.isArray(sourceObj)) {
+      return sourceObj.map((item, index) => applyMapping(item, targetObj, mappings, `${parentKey}`));
     }
 
-    const newObj = {};
-    Object.keys(obj).forEach(key => {
+    Object.keys(sourceObj).forEach(key => {
       const fullKey = parentKey ? `${parentKey}.${key}` : key;
-      const value = obj[key];
+      const value = sourceObj[key];
       const mapping = mappings.find(m => m.source === fullKey);
 
       if (mapping) {
         if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') {
           newObj[mapping.target.split('.').pop()] = value.map(item =>
-            applyMapping(item, mappings, `${fullKey}`)
+            applyMapping(item, targetObj[key], mappings, `${fullKey}`)
           );
         } else if (typeof value === 'object' && value !== null) {
-          newObj[mapping.target.split('.').pop()] = applyMapping(value, mappings, fullKey);
+          newObj[mapping.target.split('.').pop()] = applyMapping(value, targetObj[key], mappings, fullKey);
         } else {
           newObj[mapping.target.split('.').pop()] = value;
         }
@@ -46,11 +47,11 @@ const JsonMapper = () => {
     console.log("sourceJson:", sourceJson);
     if (sourceJson) {
       const updatedJson = Array.isArray(sourceJson) ? 
-        sourceJson.map(obj => applyMapping(obj, mappings)) :
-        [applyMapping(sourceJson, mappings)];
+        sourceJson.map(obj => applyMapping(obj, targetJson, mappings)) :
+        [applyMapping(sourceJson, targetJson, mappings)];
       setUpdatedSourceJson(JSON.stringify(updatedJson, null, 2));
     }
-  }, [mappings, sourceJson]);
+  }, [mappings, sourceJson, targetJson]);
 
   const handleDrop = (sourceItem, targetKey) => {
     const mappingExists = mappings.some(mapping => mapping.source === sourceItem.name && mapping.target === targetKey);
