@@ -5,11 +5,14 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import JsonContext from '../JsonContext';
 import { useNavigate } from 'react-router-dom';
 import JsonObject from './JsonObject';
+import { Modal } from 'react-bootstrap';
+import Button from '@mui/material/Button';
 
 const JsonMapper = () => {
   const { sourceJson, targetJson, url } = useContext(JsonContext);
   const [mappings, setMappings] = useState([]);
   const [updatedSourceJson, setUpdatedSourceJson] = useState('');
+  const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
   const sourceRefs = useRef({});
   const targetRefs = useRef({});
@@ -139,7 +142,7 @@ const JsonMapper = () => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
-        alert('Data saved successfully');
+        alert('Data saved in Database');
         return response.json();
       })
       .then((data) => {
@@ -173,24 +176,28 @@ const JsonMapper = () => {
           </div>
         </div>
         <div className="row mt-4">
-          <div className="col-12 text-center">
-            <button className="btn btn-primary" onClick={saveUpdatedJson}>
-              Save Updated JSON
-            </button>
+          <div className="col-12 text-center my-2" >
+            <Button variant="contained" color="primary" onClick={() => setShowModal(true)}>
+              Show Customized JSON
+            </Button>
           </div>
         </div>
-        <div className="row mt-4">
-          <div className="col-12">
-            <div className="card">
-              <div className="card-header bg-info text-white">
-                <h3>Updated Source JSON</h3>
-              </div>
-              <div className="card-body">
-                <pre>{updatedSourceJson}</pre>
-              </div>
-            </div>
-          </div>
-        </div>
+        <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
+          <Modal.Header closeButton>
+            <Modal.Title>Customized JSON</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <pre>{updatedSourceJson}</pre>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="contained" className='mx-3' color="secondary" onClick={() => setShowModal(false)}>
+              Close
+            </Button>
+            <Button variant="contained" color="primary" onClick={saveUpdatedJson}>
+              Save Customized JSON
+            </Button>
+          </Modal.Footer>
+        </Modal>
         <svg width="100%" height="100%" style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
           <defs>
             <marker id="arrow" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto-start-reverse">
