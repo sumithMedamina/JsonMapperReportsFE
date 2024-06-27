@@ -13,13 +13,15 @@ const JsonMapper = () => {
   const [mappings, setMappings] = useState([]);
   const [updatedSourceJson, setUpdatedSourceJson] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [currentMappingAttempt, setCurrentMappingAttempt] = useState(null);
   const navigate = useNavigate();
   const sourceRefs = useRef({});
   const targetRefs = useRef({});
   const containerRef = useRef(null);
 
   const applyMapping = (sourceObj, targetObj, mappings, parentKey = '') => {
-    const newObj = { ...targetObj }; // Initialize with targetObj
+    const newObj = { ...targetObj };
 
     if (Array.isArray(sourceObj)) {
       return sourceObj.map((item, index) => applyMapping(item, targetObj, mappings, `${parentKey}`));
@@ -47,7 +49,6 @@ const JsonMapper = () => {
   };
 
   useEffect(() => {
-    console.log("sourceJson:", sourceJson);
     if (sourceJson) {
       const updatedJson = Array.isArray(sourceJson) ? 
         sourceJson.map(obj => applyMapping(obj, targetJson, mappings)) :
@@ -56,17 +57,43 @@ const JsonMapper = () => {
     }
   }, [mappings, sourceJson, targetJson]);
 
+  const checkDataTypeMismatch = (sourceKey, targetKey) => {
+    const getSourceValue = (key) => key.split('.').reduce((obj, k) => obj && obj[k], sourceJson[0]);
+    const getTargetValue = (key) => key.split('.').reduce((obj, k) => obj && obj[k], targetJson);
+    
+    const sourceValue = getSourceValue(sourceKey);
+    const targetValue = getTargetValue(targetKey);
+
+    console.log('Source Value:', sourceValue, 'Target Value:', targetValue);  // Added to verify values
+
+    return typeof sourceValue !== typeof targetValue;
+  };
+
   const handleDrop = (sourceItem, targetKey) => {
     const mappingExists = mappings.some(mapping => mapping.source === sourceItem.name && mapping.target === targetKey);
     if (mappingExists) {
       return;
     }
 
-    setMappings(prevMappings => [...prevMappings, { source: sourceItem.name, target: targetKey }]);
+    if (checkDataTypeMismatch(sourceItem.name, targetKey)) {
+      console.log('Data type mismatch:', sourceItem.name, targetKey);  // To verify the mismatch
+      setCurrentMappingAttempt({ source: sourceItem.name, target: targetKey });
+      setShowWarningModal(true);
+    } else {
+      setMappings(prevMappings => [...prevMappings, { source: sourceItem.name, target: targetKey }]);
+    }
   };
 
   const handleCancelMapping = sourceKey => {
     setMappings(mappings.filter(mapping => mapping.source !== sourceKey));
+  };
+
+  const confirmMapping = () => {
+    if (currentMappingAttempt) {
+      setMappings(prevMappings => [...prevMappings, currentMappingAttempt]);
+    }
+    setShowWarningModal(false);
+    setCurrentMappingAttempt(null);
   };
 
   const renderObject = (obj, isSource = false, parentKey = '') => {
@@ -84,7 +111,6 @@ const JsonMapper = () => {
       />
     );
   };
-
   const renderMappings = () => {
     const colors = ['#FF0000', '#00FF00', '#0000FF', '#00FFFF', '#FF00FF'];
     const renderedMappings = [];
@@ -187,7 +213,11 @@ const JsonMapper = () => {
             <Modal.Title>Customized JSON</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <pre>{updatedSourceJson}</pre>
+            <textarea
+              style={{ width: '100%', height: '400px' }}
+              value={updatedSourceJson}
+              onChange={(e) => setUpdatedSourceJson(e.target.value)}
+            />
           </Modal.Body>
           <Modal.Footer>
             <Button variant="contained" className='mx-3' color="secondary" onClick={() => setShowModal(false)}>
@@ -195,6 +225,22 @@ const JsonMapper = () => {
             </Button>
             <Button variant="contained" color="primary" onClick={saveUpdatedJson}>
               Save Customized JSON
+            </Button>
+          </Modal.Footer>
+        </Modal>
+        <Modal show={showWarningModal} onHide={() => setShowWarningModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Data Type Mismatch</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p>The data types of the source and target fields do not match. Do you want to proceed?</p>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="contained" className='mx-3' color="secondary" onClick={() => setShowWarningModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="contained" color="primary" onClick={confirmMapping}>
+              Proceed
             </Button>
           </Modal.Footer>
         </Modal>
