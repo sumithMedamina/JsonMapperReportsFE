@@ -48,11 +48,12 @@ export default function Reports() {
     }, {});
 
     const postData = {
-      organisation_fields: finalKeys.filter(key => files['Organisation']?.includes(key)),
-      script_fields: finalKeys.filter(key => files['Script']?.includes(key)),
-      user_fields: finalKeys.filter(key => files['User']?.includes(key)),
+      products_fields: finalKeys.filter(key => files['products']?.includes(key)),
+      order_fields: finalKeys.filter(key => files['orders']?.includes(key)),
       conditions: parsedQueryCondition,
     };
+
+    
 
     try {
       const response = await axios.post('http://localhost:5000/generate-reports', postData);
@@ -88,19 +89,19 @@ export default function Reports() {
   };
 
   const renderTable = () => {
-    if (!report || !report.organisation) return null;
+    if (!report || !report.products) return null;
 
     const combinedData = [];
-    const orgLength = report.organisation.length;
-    const scriptLength = report.script.length;
-    const userLength = report.user.length || 0;
-    const maxLength = Math.max(orgLength, scriptLength, userLength);
+    const prodLength = report.products.length;
+    const orderLength = report.orders.length;
+   
+    const maxLength = Math.max(prodLength, orderLength);
 
     for (let i = 0; i < maxLength; i++) {
-      const org = report.organisation[i] || {};
-      const script = report.script[i] || {};
-      const user = report.user[i] || {};
-      const mergedRow = { ...org, ...script, ...user };
+      const prod = report.products[i] || {};
+      const orders = report.orders[i] || {};
+
+      const mergedRow = { ...prod, ...orders };
 
       finalKeys.forEach(key => {
         if (!mergedRow[key]) {
